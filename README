@@ -1,0 +1,9 @@
+dumps
+1 - basic
+2 - new normaliser for missing reads
+3 - no recalibration (worse off, so reverted!)
+
+Commits:
+
+1 - prior to changing scoring system
+
