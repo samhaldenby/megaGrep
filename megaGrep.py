@@ -24,7 +24,6 @@ def reverse_complement(read):
 
 
 def rank(finalCounts, recur):
-    print "RECUR=%s",recur
     readTotals = [0]*4
     counter=0
     for entry in finalCounts.items():
@@ -177,24 +176,24 @@ for p in primerIds:
                 aName = aRef[0]
                 aSeq = aRef[1]
                 if query in aSeq:
-                    print "Found in %s"%aName
+                    #print "Found in %s"%aName
                     presentInAntiRef = True
                     
                     for ref in refs.items():
                         name = ref[0]
                         seq = ref[1]
                       #  print name,seq
-                        if query in seq:   
-                            print "Found in %s and %s"%(aName,name)
+                    #    if query in seq:   
+                    #        print "Found in %s and %s"%(aName,name)
                     break
             if presentInAntiRef == False:
-                print query
+                #print query
                 for ref in refs.items():
                     name = ref[0]
                     seq = ref[1]
                    # print name,seq
                     if query in seq:
-                        print "\t",name
+                      #  print "\t",name
                         if name not in currCounts:
                             currCounts[name] = 1
                         else:

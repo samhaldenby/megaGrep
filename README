@@ -1,9 +1,11 @@
-dumps
+dumps/results
 1 - basic
 2 - new normaliser for missing reads
 3 - no recalibration (worse off, so reverted!)
+4 - changed scoring system
 
 Commits:
 
 1 - prior to changing scoring system
+	EDIT Actually in this commit, we're about to test the alternate DRB exclusion system. No change to scoring system yet
 
