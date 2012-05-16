@@ -21,6 +21,122 @@ def reverse_complement(read):
     seq = Seq(read, generic_dna)
     return seq.reverse_complement().tostring()    
 
+def rank2(finalCounts, recur):
+    readTotals = [0]*4
+    counter=0
+    for entry in finalCounts.items():
+        for x in range (0,4):
+            readTotals[x]+=entry[1][x]
+    
+    
+    countsPerRead = [0] *4
+    for readNum in range(0,4):
+        #print readNum
+        countsPerRead[readNum]={}
+        for entry in finalCounts.items():
+            name = entry[0]
+            counts = entry[1]
+            countsPerRead[readNum][name] = counts[readNum]
+            #print readNum,countsPerRead[readNum][name]
+        
+    #now rank each gene based on number of reads mapping
+    finalRanks = {}
+    for readNum in range(0,4):
+        #print "Analysing readNum %d"%readNum
+        #read through all readCounts in sorted order and assign a rank
+        currRank =1
+        prevScore = -1
+        allSameScoreList = []
+        rankDifferential = 0 #this is so that if you had scores of 10, 20, 20, 50, t
+        for entry in sorted(countsPerRead[readNum], key=countsPerRead[readNum].get, reverse=True): 
+            score = countsPerRead[readNum][entry]
+            name = entry 
+            if score != prevScore:
+                currRank = currRank+rankDifferential+1      
+                rankDifferential=1
+                allSameScoreList = []
+                allSameScoreList.append(name)
+                #add rank
+                if name not in finalRanks:
+                    finalRanks[name] = [0]*4
+                finalRanks[name][readNum]= currRank                
+            else:
+                #add rank
+                rankDifferential+=1
+                if name not in finalRanks:
+                    finalRanks[name] = [0]*4
+                finalRanks[name][readNum]= rankDifferential + currRank  
+                allSameScoreList.append(name)
+                for name in allSameScoreList:
+                    finalRanks[name][readNum]=rankDifferential + currRank
+            prevScore = score
+            #rankDict[readNum][name]=currRank
+#            if name not in finalRanks:
+#                finalRanks[name] = [0]*4
+#            finalRanks[name][readNum]= currRank
+#           optimisticRank[name
+           # print name,score,readNum,currRank, finalRanks[name],finalCounts[name],[readNum]
+            
+    #calculate total rankings
+    overallRanks = {}
+    for entry in finalRanks.items():
+        #print entry
+        overallRanks[entry[0]] = entry[1][0] + entry[1][1] + entry[1][2] + entry[1][3]
+    
+    newScoreMap = {}
+    for entry in sorted(overallRanks, key=overallRanks.get, reverse=True):
+        name = entry
+        rank = overallRanks[entry]
+        individualRanks = finalRanks[name]
+        originalCounts = finalCounts[name]
+
+        
+        #new ranking idea multiply highest count by worst rank.....lowest count by best rank
+        orderedRanks=[]
+        orderedCounts=[]
+        for i in sorted(individualRanks):
+            orderedRanks.append(i)
+        for i in sorted(originalCounts):
+            orderedCounts.append(i)
+        newIdeaScore = 0.0
+        for i in range(0,4):
+            newIdeaScore+=orderedCounts[i]/orderedRanks[i]
+        
+        misses =0
+        calibratedScore = 0
+        missModifier = 1.0        
+        for i in range(0,4):
+            calibratedScore+=originalCounts[i]/individualRanks[i]
+            if originalCounts[i]==0:
+                missModifier-=0.25
+                misses+=1
+                
+        newIdeaScore = newIdeaScore/(1+misses)
+        calibratedScore = calibratedScore / missModifier
+        newScoreMap[name]=newIdeaScore
+    #    print "size",len(newScoreMap), name, newIdeaScore, newScoreMap[name]
+        #add to map based on newIdeaScore
+        
+        print name,"\t",individualRanks,"\t",originalCounts,"\t", rank,"\t", sum(originalCounts)/rank,"\t", calibratedScore,"\t", newIdeaScore
+    
+    top10 =0
+   # for entry in newScoreMap.items():
+      #  print "@",entry
+    #for entry in sorted(finalScores, key=finalScores.get, reverse=True):
+    for entry in sorted(newScoreMap, key=newScoreMap.get, reverse=True):
+      #  print "ENTRY:",entry, len(newScoreMap)
+        name = entry
+        score = newScoreMap[entry]
+        
+        if top10 < 10:
+            print name,finalRanks[name],finalCounts[name],score
+        top10+=1
+            
+    
+    #translate back to score map i.e. (name,[1][10][13][1])
+#    for entry in finalRanks.items():
+#        print entry[0],entry[1]
+            
 
 
 def rank(finalCounts, recur):
@@ -70,21 +186,23 @@ def rank(finalCounts, recur):
        # print name, finalScore, finalScore* float(1.0/(1.0+((noHits*noHits)/100.0)))
     
    
-
-    top10=0
-    print
-    print "SCORES",recur
-    for entry in sorted(finalScores, key=finalScores.get, reverse=True):
-            score = finalScores[entry]
-            name = entry
-            #tallies = counts
-            tallies = finalCounts[name]
-            if top10 < 10:
-                print name,tallies, score  
-            top10+=1                
+    #only bother printing out if this is the last recurrance of rank
+    if recur==False:
+        top10=0
+        print
+        print "SCORES",recur
+        
+        for entry in sorted(finalScores, key=finalScores.get, reverse=True):
+                score = finalScores[entry]
+                name = entry
+                #tallies = counts
+                tallies = finalCounts[name]
+                if top10 < 10:
+                    print name,tallies, score  
+                top10+=1                
   
     #rebuild a suitable construct to send back to this function - this will recalibrate based only on the top 10 results
-    RECAL_BASED_ON = 5
+    RECAL_BASED_ON = 30
     if recur == True:
         top10=0
         recalMap = {}
@@ -95,8 +213,10 @@ def rank(finalCounts, recur):
             if top10 < RECAL_BASED_ON:
                 recalMap[name]=tallies
             top10+=1
-                    
+        
+        rank2(recalMap,False)
         rank(recalMap,False)
+        
     
     
     #return top 10
