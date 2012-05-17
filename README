@@ -4,6 +4,8 @@ dumps/results
 3 - no recalibration (worse off, so reverted!)
 4 - filtering out other DRBs 
 5 - changed scoring system
+6 - rank2 scoring now using ln(counts) rather than just counts for calculating scores - ABORTED and not submitted. Rubbish results
+7 - Added weightings to value of each read hit based on ambiguity (1/log10(numGenesHit)) - Not as good!
 
 Commits:
 
